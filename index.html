@@ -3,47 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>갈월 MMR 발사대 (v2.3)</title>
+    <title>갈월 MMR 발사대 (v2.4)</title>
     <style>
         /* 기본 스타일 */
         body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
         h1 { text-align: center; color: #2c3e50; margin-top: 0; }
         .section { margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #ecf0f1; }
         
-        /* [레이아웃 수정] 본문과 광고 영역을 가로로 나란히 배치 */
-        .wrapper { 
+        /* [구조 개편] 화면 전체를 좌/우로 완벽하게 쪼개는 메인 레이아웃 */
+        .main-wrapper { 
             display: flex; 
-            max-width: 1400px; /* 광고 영역 포함을 위해 최대 너비 확장 */
+            max-width: 1450px; /* 광고 공간을 고려해 넓게 설정 */
             margin: 0 auto; 
-            gap: 20px; 
+            gap: 25px; 
             align-items: flex-start; 
         }
         
-        /* 왼쪽 메인 콘텐츠 영역 */
-        .container { 
+        /* 왼쪽: 메인 기능들이 모여있는 본문 영역 */
+        .content-container { 
             flex: 1; 
             background: #fff; 
-            padding: 20px; 
+            padding: 25px; 
             border-radius: 10px; 
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
             min-width: 0; 
         }
         
-        /* [광고 우측 고정 수정] 스크롤을 내려도 화면 상단에 멈춰서 계속 고정됨 */
-        #ad-container { 
-            width: 250px; /* 광고 영역 너비 확보 */
+        /* 오른쪽: 본문과 완전히 분리되어 스크롤을 내려도 따라오는 고정 광고 영역 */
+        #ad-sidebar { 
+            width: 260px; /* 광고 사이드바 너비 고정 */
             position: -webkit-sticky;
             position: sticky; 
-            top: 20px; /* 스크롤 고정 시 상단 여백 */
+            top: 20px; /* 스크롤이 내려갔을 때 화면 최상단과의 간격 */
             align-self: flex-start;
             text-align: center;
+            display: none; /* 광고가 로드되기 전에는 공간을 차지하지 않음 */
         }
         
         #ad-image { 
             width: 100%; 
             border-radius: 8px; 
-            display: none; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            display: block;
         }
 
         /* 데이터 이관 섹션 */
@@ -72,18 +73,18 @@
         .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 10px; position: relative; }
         .records-scroll-area { max-height: 500px; overflow-y: auto; margin-top: 15px; border: 1px solid #ddd; }
 
-        /* 해상도가 1000px 미만으로 좁아지면 가로 배치를 깨고 세로로 자동 정렬 (반응형 대응) */
-        @media (max-width: 1000px) {
-            .wrapper { flex-direction: column; }
-            #ad-container { width: 100%; position: static; margin-top: 20px; }
+        /* 화면이 너무 좁아지면 가로 배치를 해제하고 하단으로 자연스럽게 내림 (반응형) */
+        @media (max-width: 1100px) {
+            .main-wrapper { flex-direction: column; align-items: center; }
+            #ad-sidebar { width: 100%; max-width: 400px; position: static; margin-top: 30px; }
         }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
+<div class="main-wrapper">
     
-    <div class="container">
+    <div class="content-container">
         <h1>갈월 MMR 발사대 (Server Edition)</h1>
 
         <div class="import-box">
@@ -133,14 +134,13 @@
         </div>
     </div>
 
-    <div id="ad-container">
+    <div id="ad-sidebar">
         <a id="ad-link" href="#" target="_blank">
-            <img id="ad-image" src="">
+            <img id="ad-image" src="" alt="광고">
         </a>
     </div>
 
 </div>
-
 <div id="recordsModal" class="modal">
     <div class="modal-content">
         <span style="float:right; cursor:pointer; font-size:28px; font-weight:bold;" onclick="closeModal()">&times;</span>
@@ -172,7 +172,7 @@
 
     let scores = {}; 
 
-    // 서버 데이터 로드 함수
+    // 서버 데이터 및 광고 로드 함수
     async function loadDataFromServer() {
         try {
             const response = await fetch(API_URL);
@@ -180,15 +180,17 @@
             
             scores = result.players || result; 
             
+            // 광고 영역 스크립트 정밀 제어
+            const adSidebar = document.getElementById('ad-sidebar');
             const adImg = document.getElementById('ad-image');
             const adLink = document.getElementById('ad-link');
             
             if (result.ad && result.ad.image && result.ad.image.trim() !== "") {
                 adImg.src = result.ad.image;
                 adLink.href = result.ad.link || "#";
-                adImg.style.display = 'inline-block';
+                adSidebar.style.display = 'block'; // 광고가 존재할 때만 우측 사이드바 레이아웃 활성화
             } else {
-                adImg.style.display = 'none';
+                adSidebar.style.display = 'none';
             }
 
             renderScoreboard();
@@ -199,7 +201,7 @@
         }
     }
 
-    // 플레이어 추가 기능 (서버 연동 버전)
+    // 플레이어 추가 기능
     async function addNewPlayer() {
         const name = document.getElementById('player-name-input').value.trim();
         if (!name) return alert("이름을 입력해주세요.");
@@ -224,7 +226,7 @@
         }
     }
 
-    // [수정 및 안전 장치 완료] 초기화 {} 기능 에러 해결 버전
+    // 데이터 이관 및 초기화 {} 기능
     async function importAndRecalculate() {
         const input = document.getElementById('json-import-input').value.trim();
         if (!input) return alert("데이터를 입력해주세요. 완전히 비우려면 {}를 입력하세요.");
@@ -233,7 +235,6 @@
             const rawData = JSON.parse(input);
             const uploadData = [];
 
-            // 빈 객체({})가 아닐 경우에만 내부 전적 루프를 돕니다.
             if (Object.keys(rawData).length > 0) {
                 Object.keys(rawData).forEach(name => {
                     const player = rawData[name];
