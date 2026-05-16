@@ -225,12 +225,32 @@ async function importAndRecalculate() {
             });
         });
 
-        if (confirm(`${uploadData.length}개의 데이터를 서버로 보냅니다.`)) {
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify(uploadData) });
-            alert("이관 완료!");
-            loadDataFromServer();
+        // 경고 문구 변경: 덮어쓴다는 점을 명확히 고지
+        if (confirm(`⚠️ [주의] 기존 구글 시트의 모든 전적이 완전히 삭제되고, 입력하신 ${uploadData.length}개의 데이터로 '덮어쓰기(초기화)' 됩니다. 진행하시겠습니까?`)) {
+            
+            // 서버에 덮어쓰기용 구조로 패키징해서 전송
+            const packet = {
+                action: "clearAndImport",
+                data: uploadData
+            };
+
+            const response = await fetch(API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(packet) 
+            });
+            
+            const resText = await response.text();
+            if (resText.includes("Success")) {
+                alert("기존 데이터를 모두 지우고 성공적으로 덮어썼습니다!");
+                document.getElementById('json-import-input').value = '';
+                await loadDataFromServer();
+            } else {
+                alert("서버 처리 중 오류 발생: " + resText);
+            }
         }
-    } catch (e) { alert("JSON 형식이 잘못되었습니다."); }
+    } catch (e) { 
+        alert("JSON 형식이 잘못되었습니다."); 
+    }
 }
 
     function renderScoreboard() {
