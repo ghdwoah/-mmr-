@@ -3,14 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>갈월 MMR 발사대 (v2.1)</title>
+    <title>갈월 MMR 발사대 (v2.3)</title>
     <style>
         /* 기본 스타일 */
         body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-        h1 { text-align: center; color: #2c3e50; }
+        h1 { text-align: center; color: #2c3e50; margin-top: 0; }
         .section { margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #ecf0f1; }
         
+        /* [레이아웃 수정] 본문과 광고 영역을 가로로 나란히 배치 */
+        .wrapper { 
+            display: flex; 
+            max-width: 1400px; /* 광고 영역 포함을 위해 최대 너비 확장 */
+            margin: 0 auto; 
+            gap: 20px; 
+            align-items: flex-start; 
+        }
+        
+        /* 왼쪽 메인 콘텐츠 영역 */
+        .container { 
+            flex: 1; 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+            min-width: 0; 
+        }
+        
+        /* [광고 우측 고정 수정] 스크롤을 내려도 화면 상단에 멈춰서 계속 고정됨 */
+        #ad-container { 
+            width: 250px; /* 광고 영역 너비 확보 */
+            position: -webkit-sticky;
+            position: sticky; 
+            top: 20px; /* 스크롤 고정 시 상단 여백 */
+            align-self: flex-start;
+            text-align: center;
+        }
+        
+        #ad-image { 
+            width: 100%; 
+            border-radius: 8px; 
+            display: none; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        }
+
         /* 데이터 이관 섹션 */
         .import-box { background-color: #fff3cd; border: 2px dashed #ffeeba; margin-bottom: 20px; padding: 15px; border-radius: 10px; }
         textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; box-sizing: border-box; }
@@ -32,91 +67,80 @@
         #team-a { background-color: #fbe5e5; border-color: #e74c3c; }
         #team-b { background-color: #e5f5fb; border-color: #3498db; }
 
-        /* 모달 및 스크롤 기능 추가 */
+        /* 모달 및 스크롤 기능 */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { 
-            background: white; 
-            margin: 5% auto; 
-            padding: 20px; 
-            width: 80%; 
-            max-width: 800px; 
-            border-radius: 10px; 
-            position: relative;
-        }
-        /* 상세 기록 테이블 스크롤 영역 */
-        .records-scroll-area {
-            max-height: 500px; /* 높이 제한 */
-            overflow-y: auto;  /* 세로 스크롤 활성화 */
-            margin-top: 15px;
-            border: 1px solid #ddd;
+        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; max-width: 800px; border-radius: 10px; position: relative; }
+        .records-scroll-area { max-height: 500px; overflow-y: auto; margin-top: 15px; border: 1px solid #ddd; }
+
+        /* 해상도가 1000px 미만으로 좁아지면 가로 배치를 깨고 세로로 자동 정렬 (반응형 대응) */
+        @media (max-width: 1000px) {
+            .wrapper { flex-direction: column; }
+            #ad-container { width: 100%; position: static; margin-top: 20px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>갈월 MMR 발사대 (Local Edition)</h1>
+<div class="wrapper">
+    
+    <div class="container">
+        <h1>갈월 MMR 발사대 (Server Edition)</h1>
 
-<!-- 광고 영역 -->
-<div id="ad-container" style="max-width: 1100px; margin: 10px auto; text-align: center;">
-    <a id="ad-link" href="#" target="_blank">
-        <img id="ad-image" src="" style="width: 100%; border-radius: 8px; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-    </a>
-</div>
+        <div class="import-box">
+            <h3>📥 기존 서버 데이터 이관 (재측정 및 시트 초기화)</h3>
+            <textarea id="json-import-input" rows="2" placeholder='시트를 완전히 비우려면 {}를 입력하고 버튼을 누르세요.'></textarea>
+            <button class="btn btn-import" onclick="importAndRecalculate()">🔄 데이터 재측정 및 이관 실행</button>
+        </div>
 
-    <!-- 데이터 이관 -->
-    <div class="import-box">
-        <h3>📥 기존 서버 데이터 이관 (재측정)</h3>
-        <textarea id="json-import-input" rows="2" placeholder='JSON 데이터를 붙여넣으세요.'></textarea>
-        <button class="btn btn-import" onclick="importAndRecalculate()">🔄 데이터 재측정 및 이관 실행</button>
-    </div>
+        <div class="section">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="player-name-input" style="flex-grow:1; padding:10px;" placeholder="새 플레이어 이름">
+                <button class="btn btn-add" onclick="addNewPlayer()">➕ 플레이어 추가</button>
+            </div>
+        </div>
 
-    <!-- 플레이어 추가 -->
-    <div class="section">
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="player-name-input" style="flex-grow:1; padding:10px;" placeholder="새 플레이어 이름">
-            <button class="btn btn-add" onclick="addNewPlayer()">➕ 플레이어 추가</button>
+        <div class="section">
+            <h3>🚀 일괄 전적 입력 (10명)</h3>
+            <textarea id="bulk-input-textarea" rows="4" placeholder="이름 10/2/8 (한 줄에 한 명씩)"></textarea>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <label><input type="checkbox" id="top-five-win-check" checked> 상위 5명이 승리팀</label>
+                <button class="btn btn-add" onclick="handleBulkRecord()">✅ 전적 반영</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🥇 스코어보드</h3>
+            <table id="scoreboard">
+                <thead>
+                    <tr>
+                        <th>순위</th>
+                        <th>이름</th>
+                        <th>MMR</th>
+                        <th>승률 (전적)</th>
+                        <th>평균 KDA (K+A/D)</th>
+                        <th>액션</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>👥 팀 밸런스 구성 (10명 선택)</h3>
+            <div id="player-selection-list" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
+            <button class="btn btn-import" onclick="handleTeamBuilding()">🎲 팀 밸런스 맞추기</button>
+            <div id="team-result"></div>
         </div>
     </div>
 
-    <!-- 일괄 전적 입력 -->
-    <div class="section">
-        <h3>🚀 일괄 전적 입력 (10명)</h3>
-        <textarea id="bulk-input-textarea" rows="4" placeholder="이름 10/2/8 (한 줄에 한 명씩)"></textarea>
-        <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <label><input type="checkbox" id="top-five-win-check" checked> 상위 5명이 승리팀</label>
-            <button class="btn btn-add" onclick="handleBulkRecord()">✅ 전적 반영</button>
-        </div>
+    <div id="ad-container">
+        <a id="ad-link" href="#" target="_blank">
+            <img id="ad-image" src="">
+        </a>
     </div>
 
-    <!-- 스코어보드 -->
-    <div class="section">
-        <h3>🥇 스코어보드</h3>
-        <table id="scoreboard">
-            <thead>
-                <tr>
-                    <th>순위</th>
-                    <th>이름</th>
-                    <th>MMR</th>
-                    <th>승률 (전적)</th>
-                    <th>평균 KDA (K+A/D)</th>
-                    <th>액션</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-
-    <!-- 팀 빌더 -->
-    <div class="section">
-        <h3>👥 팀 밸런스 구성 (10명 선택)</h3>
-        <div id="player-selection-list" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;"></div>
-        <button class="btn btn-import" onclick="handleTeamBuilding()">🎲 팀 밸런스 맞추기</button>
-        <div id="team-result"></div>
-    </div>
 </div>
 
-<!-- 상세 기록 모달 (스크롤 기능 적용) -->
 <div id="recordsModal" class="modal">
     <div class="modal-content">
         <span style="float:right; cursor:pointer; font-size:28px; font-weight:bold;" onclick="closeModal()">&times;</span>
@@ -138,7 +162,6 @@
 </div>
 
 <script>
-    // [중요] 구글 배포 후 받은 URL을 여기에 붙여넣으세요
     const API_URL = "https://script.google.com/macros/s/AKfycbySMJ5z2WZD_ChmLX7dtXQW3V4d7zatFk_6oYqpCVec2M1YBvMiu3pUuPeXb835SNzI/exec";
 
     const BASE_MMR = 1200;
@@ -147,18 +170,16 @@
     const KDA_GOAL = 2.5;
     const KDA_WEIGHT = 4;
 
-    let scores = {}; // 서버에서 받아온 데이터를 담을 변수
+    let scores = {}; 
 
-    // [통합] 서버 데이터 로드 함수
+    // 서버 데이터 로드 함수
     async function loadDataFromServer() {
         try {
             const response = await fetch(API_URL);
             const result = await response.json();
             
-            // 데이터 구조 파악 후 할당 (result.players가 있으면 그것을 사용)
             scores = result.players || result; 
             
-            // 광고 데이터 업데이트
             const adImg = document.getElementById('ad-image');
             const adLink = document.getElementById('ad-link');
             
@@ -203,55 +224,61 @@
         }
     }
 
-async function importAndRecalculate() {
-    const input = document.getElementById('json-import-input').value;
-    if (!input.trim()) return alert("JSON 데이터를 입력해주세요.");
+    // [수정 및 안전 장치 완료] 초기화 {} 기능 에러 해결 버전
+    async function importAndRecalculate() {
+        const input = document.getElementById('json-import-input').value.trim();
+        if (!input) return alert("데이터를 입력해주세요. 완전히 비우려면 {}를 입력하세요.");
 
-    try {
-        const rawData = JSON.parse(input);
-        const uploadData = [];
+        try {
+            const rawData = JSON.parse(input);
+            const uploadData = [];
 
-        Object.keys(rawData).forEach(name => {
-            const player = rawData[name];
-            const records = player.GameRecords || player.gameRecords || [];
-            records.forEach(r => {
-                uploadData.push({
-                    name: name,
-                    result: (r.Result || r.result || 'loss').toLowerCase(),
-                    k: r.K ?? r.k ?? 0,
-                    d: r.D ?? r.d ?? 0,
-                    a: r.A ?? r.a ?? 0
+            // 빈 객체({})가 아닐 경우에만 내부 전적 루프를 돕니다.
+            if (Object.keys(rawData).length > 0) {
+                Object.keys(rawData).forEach(name => {
+                    const player = rawData[name];
+                    const records = player.GameRecords || player.gameRecords || [];
+                    records.forEach(r => {
+                        uploadData.push({
+                            name: name,
+                            result: (r.Result || r.result || 'loss').toLowerCase(),
+                            k: r.K ?? r.k ?? 0,
+                            d: r.D ?? r.d ?? 0,
+                            a: r.A ?? r.a ?? 0
+                        });
+                    });
                 });
-            });
-        });
-
-        // 경고 문구 변경: 덮어쓴다는 점을 명확히 고지
-        if (confirm(`⚠️ [주의] 기존 구글 시트의 모든 전적이 완전히 삭제되고, 입력하신 ${uploadData.length}개의 데이터로 '덮어쓰기(초기화)' 됩니다. 진행하시겠습니까?`)) {
-            
-            // 서버에 덮어쓰기용 구조로 패키징해서 전송
-            const packet = {
-                action: "clearAndImport",
-                data: uploadData
-            };
-
-            const response = await fetch(API_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(packet) 
-            });
-            
-            const resText = await response.text();
-            if (resText.includes("Success")) {
-                alert("기존 데이터를 모두 지우고 성공적으로 덮어썼습니다!");
-                document.getElementById('json-import-input').value = '';
-                await loadDataFromServer();
-            } else {
-                alert("서버 처리 중 오류 발생: " + resText);
             }
+
+            const isClearMode = uploadData.length === 0;
+            const confirmMsg = isClearMode 
+                ? "⚠️ [경고] {}가 입력되었습니다. 구글 시트의 모든 전적 데이터가 완전히 삭제되고 초기화됩니다. 정말 진행하시겠습니까?"
+                : `⚠️ [주의] 기존 구글 시트의 모든 전적이 완전히 삭제되고, 입력하신 ${uploadData.length}개의 데이터로 '덮어쓰기(초기화)' 됩니다. 진행하시겠습니까?`;
+
+            if (confirm(confirmMsg)) {
+                const packet = {
+                    action: "clearAndImport",
+                    data: uploadData
+                };
+
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(packet) 
+                });
+                
+                const resText = await response.text();
+                if (resText.includes("Success")) {
+                    alert(isClearMode ? "구글 시트가 완전히 초기화되었습니다!" : "기존 데이터를 모두 지우고 성공적으로 덮어썼습니다!");
+                    document.getElementById('json-import-input').value = '';
+                    await loadDataFromServer();
+                } else {
+                    alert("서버 처리 중 오류 발생: " + resText);
+                }
+            }
+        } catch (e) { 
+            alert("JSON 형식이 잘못되었습니다. 올바른 전적 구조나 {}를 입력하세요."); 
         }
-    } catch (e) { 
-        alert("JSON 형식이 잘못되었습니다."); 
     }
-}
 
     function renderScoreboard() {
         const tbody = document.querySelector('#scoreboard tbody');
@@ -263,7 +290,6 @@ async function importAndRecalculate() {
 
         names.forEach((name, idx) => {
             const p = scores[name];
-            // [핵심 수정] 기록이 없을 경우 빈 배열로 처리하여 filter 에러 방지
             const records = p.gameRecords || []; 
             
             const wins = records.filter(r => r.result === 'win').length;
@@ -298,38 +324,39 @@ async function importAndRecalculate() {
         return `${avgK}/${avgD}/${avgA} (<strong>${ratio}</strong>)`;
     }
 
-    // 2. 전적 저장 시 서버로 데이터를 보냅니다.
     async function handleBulkRecord() {
-    const lines = document.getElementById('bulk-input-textarea').value.trim().split('\n');
-    const isWin = document.getElementById('top-five-win-check').checked;
-    if (lines.length !== 10) return alert("10명을 입력해주세요.");
+        const lines = document.getElementById('bulk-input-textarea').value.trim().split('\n');
+        const isWin = document.getElementById('top-five-win-check').checked;
+        if (lines.length !== 10) return alert("10명을 입력해주세요.");
 
-    const uploadData = [];
-    lines.forEach((line, i) => {
-        const match = line.match(/^([^\s]+)\s*([\d\/-]+)$/);
-        if (match) {
-            const name = match[1];
-            const [k, d, a] = match[2].split(/[\/\s-]/).map(Number);
-            const result = (i < 5) ? (isWin ? 'win' : 'loss') : (isWin ? 'loss' : 'win');
-            // MMR 계산 없이 로우 데이터만 전송[cite: 1]
-            uploadData.push({ name, result, k, d, a });
+        const uploadData = [];
+        lines.forEach((line, i) => {
+            const match = line.match(/^([^\s]+)\s*([\d\/-]+)$/);
+            if (match) {
+                const name = match[1];
+                const [k, d, a] = match[2].split(/[\/\s-]/).map(Number);
+                const result = (i < 5) ? (isWin ? 'win' : 'loss') : (isWin ? 'loss' : 'win');
+                uploadData.push({ name, result, k, d, a });
+            }
+        });
+
+        const btn = document.querySelector('.btn-add');
+        btn.innerText = "저장 중...";
+        btn.disabled = true;
+
+        try {
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify(uploadData) });
+            alert("기록 완료!");
+            document.getElementById('bulk-input-textarea').value = '';
+            await loadDataFromServer();
+        } catch (e) { 
+            alert("저장 실패"); 
+        } finally { 
+            btn.innerText = "✅ 전적 반영"; 
+            btn.disabled = false; 
         }
-    });
+    }
 
-    const btn = document.querySelector('.btn-add');
-    btn.innerText = "저장 중...";
-    btn.disabled = true;
-
-    try {
-        await fetch(API_URL, { method: 'POST', body: JSON.stringify(uploadData) });
-        alert("기록 완료!");
-        document.getElementById('bulk-input-textarea').value = '';
-        await loadDataFromServer();
-    } catch (e) { alert("저장 실패"); }
-    finally { btn.innerText = "✅ 전적 반영"; btn.disabled = false; }
-}
-
-    // 팀 빌더 및 상세 모달 기능 (기존 로직 유지)
     function handleTeamBuilding() {
         const selected = Array.from(document.querySelectorAll('#player-selection-list input:checked')).map(cb => ({
             name: cb.value, mmr: scores[cb.value].mmr
@@ -377,7 +404,6 @@ async function importAndRecalculate() {
     function closeModal() { document.getElementById('recordsModal').style.display = 'none'; }
     window.onclick = function(event) { if (event.target == document.getElementById('recordsModal')) closeModal(); }
 
-    // 페이지 시작 시 서버 데이터 로드
     loadDataFromServer();
 </script>
 </body>
